@@ -2,7 +2,6 @@
 //!
 //! Provides a blocking connect and methods for issuing the supported commands.
 
-use bytes::Bytes;
 use std::time::Duration;
 use tokio::net::ToSocketAddrs;
 use tokio::runtime::Runtime;
@@ -98,7 +97,7 @@ impl BlockingClient {
     ///     println!("Got = {:?}", val);
     /// }
     /// ```
-    pub fn get(&mut self, key: &str) -> crate::Result<Option<Bytes>> {
+    pub fn get(&mut self, key: &str) -> crate::Result<Option<Vec<u8>>> {
         self.rt.block_on(self.inner.get(key))
     }
 
@@ -127,7 +126,7 @@ impl BlockingClient {
     ///     assert_eq!(val, "bar");
     /// }
     /// ```
-    pub fn set(&mut self, key: &str, value: Bytes) -> crate::Result<()> {
+    pub fn set(&mut self, key: &str, value: Vec<u8>) -> crate::Result<()> {
         self.rt.block_on(self.inner.set(key, value))
     }
 
@@ -173,7 +172,7 @@ impl BlockingClient {
     pub fn set_expires(
         &mut self,
         key: &str,
-        value: Bytes,
+        value: Vec<u8>,
         expiration: Duration,
     ) -> crate::Result<()> {
         self.rt
@@ -200,7 +199,7 @@ impl BlockingClient {
     ///     println!("Got = {:?}", val);
     /// }
     /// ```
-    pub fn publish(&mut self, channel: &str, message: Bytes) -> crate::Result<u64> {
+    pub fn publish(&mut self, channel: &str, message: Vec<u8>) -> crate::Result<u64> {
         self.rt.block_on(self.inner.publish(channel, message))
     }
 

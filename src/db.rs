@@ -1,7 +1,6 @@
 use tokio::sync::{broadcast, Notify};
 use tokio::time::{self, Duration, Instant};
 
-use bytes::Bytes;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 use tracing::debug;
@@ -65,7 +64,7 @@ struct State {
 
     /// The pub/sub key-space. Redis uses a **separate** key space for key-value
     /// and pub/sub. `mini-redis` handles this by using a separate `HashMap`.
-    pub_sub: HashMap<String, broadcast::Sender<Bytes>>,
+    pub_sub: HashMap<String, broadcast::Sender<Vec<u8>>>,
 
     /// Tracks key TTLs.
     ///
@@ -96,7 +95,7 @@ struct Entry {
     id: u64,
 
     /// Stored data
-    data: Bytes,
+    data: Vec<u8>,
 
     /// Instant at which the entry expires and should be removed from the
     /// database.
@@ -150,7 +149,7 @@ impl Db {
     /// Returns `None` if there is no value associated with the key. This may be
     /// due to never having assigned a value to the key or a previously assigned
     /// value expired.
-    pub(crate) fn get(&self, key: &str) -> Option<Bytes> {
+    pub(crate) fn get(&self, key: &str) -> Option<Vec<u8>> {
         // Acquire the lock, get the entry and clone the value.
         //
         // Because data is stored using `Bytes`, a clone here is a shallow
@@ -163,7 +162,7 @@ impl Db {
     /// Duration.
     ///
     /// If a value is already associated with the key, it is removed.
-    pub(crate) fn set(&self, key: String, value: Bytes, expire: Option<Duration>) {
+    pub(crate) fn set(&self, key: String, value: Vec<u8>, expire: Option<Duration>) {
         let mut state = self.shared.state.lock().unwrap();
 
         // Get and increment the next insertion ID. Guarded by the lock, this
@@ -231,7 +230,7 @@ impl Db {
     ///
     /// The returned `Receiver` is used to receive values broadcast by `PUBLISH`
     /// commands.
-    pub(crate) fn subscribe(&self, key: String) -> broadcast::Receiver<Bytes> {
+    pub(crate) fn subscribe(&self, key: String) -> broadcast::Receiver<Vec<u8>> {
         use std::collections::hash_map::Entry;
 
         // Acquire the mutex
@@ -262,7 +261,7 @@ impl Db {
 
     /// Publish a message to the channel. Returns the number of subscribers
     /// listening on the channel.
-    pub(crate) fn publish(&self, key: &str, value: Bytes) -> usize {
+    pub(crate) fn publish(&self, key: &str, value: Vec<u8>) -> usize {
         let state = self.shared.state.lock().unwrap();
 
         state

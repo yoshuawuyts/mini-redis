@@ -1,7 +1,6 @@
 use crate::cmd::{Parse, ParseError, Unknown};
 use crate::{Command, Connection, Db, Frame, Shutdown};
 
-use bytes::Bytes;
 use std::pin::Pin;
 use tokio::select;
 use tokio::sync::broadcast;
@@ -30,7 +29,7 @@ pub struct Unsubscribe {
 /// `broadcast::Receiver`. We use `stream!` to create a `Stream` that consumes
 /// messages. Because `stream!` values cannot be named, we box the stream using
 /// a trait object.
-type Messages = Pin<Box<dyn Stream<Item = Bytes> + Send>>;
+type Messages = Pin<Box<dyn Stream<Item = Vec<u8>> + Send>>;
 
 impl Subscribe {
     /// Creates a new `Subscribe` command to listen on the specified channels.
@@ -161,9 +160,9 @@ impl Subscribe {
     /// to the server.
     pub(crate) fn into_frame(self) -> Frame {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("subscribe".as_bytes()));
+        frame.push_bulk(Vec::from("subscribe".as_bytes()));
         for channel in self.channels {
-            frame.push_bulk(Bytes::from(channel.into_bytes()));
+            frame.push_bulk(Vec::from(channel.into_bytes()));
         }
         frame
     }
@@ -250,13 +249,13 @@ async fn handle_command(
 /// Creates the response to a subcribe request.
 ///
 /// All of these functions take the `channel_name` as a `String` instead of
-/// a `&str` since `Bytes::from` can reuse the allocation in the `String`, and
+/// a `&str` since `Vec::from` can reuse the allocation in the `String`, and
 /// taking a `&str` would require copying the data. This allows the caller to
 /// decide whether to clone the channel name or not.
 fn make_subscribe_frame(channel_name: String, num_subs: usize) -> Frame {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"subscribe"));
-    response.push_bulk(Bytes::from(channel_name));
+    response.push_bulk(Vec::from("subscribe"));
+    response.push_bulk(Vec::from(channel_name));
     response.push_int(num_subs as u64);
     response
 }
@@ -264,18 +263,18 @@ fn make_subscribe_frame(channel_name: String, num_subs: usize) -> Frame {
 /// Creates the response to an unsubcribe request.
 fn make_unsubscribe_frame(channel_name: String, num_subs: usize) -> Frame {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"unsubscribe"));
-    response.push_bulk(Bytes::from(channel_name));
+    response.push_bulk(Vec::from("unsubscribe"));
+    response.push_bulk(Vec::from(channel_name));
     response.push_int(num_subs as u64);
     response
 }
 
 /// Creates a message informing the client about a new message on a channel that
 /// the client subscribes to.
-fn make_message_frame(channel_name: String, msg: Bytes) -> Frame {
+fn make_message_frame(channel_name: String, msg: Vec<u8>) -> Frame {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"message"));
-    response.push_bulk(Bytes::from(channel_name));
+    response.push_bulk(Vec::from("message"));
+    response.push_bulk(Vec::from(channel_name));
     response.push_bulk(msg);
     response
 }
@@ -340,10 +339,10 @@ impl Unsubscribe {
     /// send to the server.
     pub(crate) fn into_frame(self) -> Frame {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("unsubscribe".as_bytes()));
+        frame.push_bulk(Vec::from("unsubscribe".as_bytes()));
 
         for channel in self.channels {
-            frame.push_bulk(Bytes::from(channel.into_bytes()));
+            frame.push_bulk(Vec::from(channel.into_bytes()));
         }
 
         frame

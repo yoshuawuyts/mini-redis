@@ -1,6 +1,5 @@
 use crate::frame::{self, Frame};
 
-use bytes::{Buf, BytesMut};
 use std::io::{self, Cursor};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufWriter};
 use tokio::net::TcpStream;
@@ -25,7 +24,7 @@ pub struct Connection {
     stream: BufWriter<TcpStream>,
 
     // The buffer for reading frames.
-    buffer: BytesMut,
+    buffer: Vec<u8>,
 }
 
 impl Connection {
@@ -38,7 +37,7 @@ impl Connection {
             // this is fine. However, real applications will want to tune this
             // value to their specific use case. There is a high likelihood that
             // a larger read buffer will work better.
-            buffer: BytesMut::with_capacity(4 * 1024),
+            buffer: Vec::with_capacity(4 * 1024),
         }
     }
 

@@ -1,7 +1,6 @@
 use crate::cmd::{Parse, ParseError};
 use crate::{Connection, Db, Frame};
 
-use bytes::Bytes;
 use std::time::Duration;
 use tracing::{debug, instrument};
 
@@ -23,7 +22,7 @@ pub struct Set {
     key: String,
 
     /// the value to be stored
-    value: Bytes,
+    value: Vec<u8>,
 
     /// When to expire the key
     expire: Option<Duration>,
@@ -34,7 +33,7 @@ impl Set {
     ///
     /// If `expire` is `Some`, the value should expire after the specified
     /// duration.
-    pub fn new(key: impl ToString, value: Bytes, expire: Option<Duration>) -> Set {
+    pub fn new(key: impl ToString, value: Vec<u8>, expire: Option<Duration>) -> Set {
         Set {
             key: key.to_string(),
             value,
@@ -48,7 +47,7 @@ impl Set {
     }
 
     /// Get the value
-    pub fn value(&self) -> &Bytes {
+    pub fn value(&self) -> &[u8] {
         &self.value
     }
 
@@ -143,8 +142,8 @@ impl Set {
     /// the server.
     pub(crate) fn into_frame(self) -> Frame {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("set".as_bytes()));
-        frame.push_bulk(Bytes::from(self.key.into_bytes()));
+        frame.push_bulk(Vec::from("set".as_bytes()));
+        frame.push_bulk(Vec::from(self.key.into_bytes()));
         frame.push_bulk(self.value);
         if let Some(ms) = self.expire {
             // Expirations in Redis procotol can be specified in two ways
@@ -153,7 +152,7 @@ impl Set {
             // We the second option because it allows greater precision and
             // src/bin/cli.rs parses the expiration argument as milliseconds
             // in duration_from_ms_str()
-            frame.push_bulk(Bytes::from("px".as_bytes()));
+            frame.push_bulk(Vec::from("px".as_bytes()));
             frame.push_int(ms.as_millis() as u64);
         }
         frame

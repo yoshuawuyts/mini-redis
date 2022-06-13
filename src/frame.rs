@@ -1,7 +1,6 @@
 //! Provides a type representing a Redis protocol frame as well as utilities for
 //! parsing frames from a byte array.
 
-use bytes::{Buf, Bytes};
 use std::convert::TryInto;
 use std::fmt;
 use std::io::Cursor;
@@ -14,7 +13,7 @@ pub enum Frame {
     Simple(String),
     Error(String),
     Integer(u64),
-    Bulk(Bytes),
+    Bulk(Vec<u8>),
     Null,
     Array(Vec<Frame>),
 }
@@ -39,7 +38,7 @@ impl Frame {
     /// # Panics
     ///
     /// panics if `self` is not an array
-    pub(crate) fn push_bulk(&mut self, bytes: Bytes) {
+    pub(crate) fn push_bulk(&mut self, bytes: Vec<u8>) {
         match self {
             Frame::Array(vec) => {
                 vec.push(Frame::Bulk(bytes));
@@ -145,7 +144,7 @@ impl Frame {
                         return Err(Error::Incomplete);
                     }
 
-                    let data = Bytes::copy_from_slice(&src.chunk()[..len]);
+                    let data = Vec::from(&src.chunk()[..len]);
 
                     // skip that number of bytes + 2 (\r\n).
                     skip(src, n)?;

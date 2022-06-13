@@ -1,6 +1,5 @@
 use crate::Frame;
 
-use bytes::Bytes;
 use std::{fmt, str, vec};
 
 /// Utility for parsing a command
@@ -82,7 +81,7 @@ impl Parse {
             //
             // Although errors are stored as strings and could be represented as
             // raw bytes, they are considered separate types.
-            Frame::Simple(s) => Ok(Bytes::from(s.into_bytes())),
+            Frame::Simple(s) => Ok(Vec::from(s.into_bytes())),
             Frame::Bulk(data) => Ok(data),
             frame => Err(format!(
                 "protocol error; expected simple frame or bulk frame, got {:?}",

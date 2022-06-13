@@ -1,6 +1,5 @@
 use mini_redis::{client, DEFAULT_PORT};
 
-use bytes::Bytes;
 use std::num::ParseIntError;
 use std::str;
 use std::time::Duration;
@@ -33,7 +32,7 @@ enum Command {
 
         /// Value to set.
         #[structopt(parse(from_str = bytes_from_str))]
-        value: Bytes,
+        value: Vec<u8>,
 
         /// Expire the value after specified amount of time
         #[structopt(parse(try_from_str = duration_from_ms_str))]
@@ -46,7 +45,7 @@ enum Command {
 
         #[structopt(parse(from_str = bytes_from_str))]
         /// Message to publish
-        message: Bytes,
+        message: Vec<u8>,
     },
     /// Subscribe a client to a specific channel or channels.
     Subscribe {
@@ -136,5 +135,5 @@ fn duration_from_ms_str(src: &str) -> Result<Duration, ParseIntError> {
 }
 
 fn bytes_from_str(src: &str) -> Bytes {
-    Bytes::from(src.to_string())
+    Vec::from(src.to_string())
 }

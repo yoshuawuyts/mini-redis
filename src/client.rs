@@ -6,7 +6,7 @@ use crate::cmd::{Get, Publish, Set, Subscribe, Unsubscribe};
 use crate::{Connection, Frame};
 
 use async_stream::try_stream;
-use bytes::Bytes;
+
 use std::io::{Error, ErrorKind};
 use std::time::Duration;
 use tokio::net::{TcpStream, ToSocketAddrs};
@@ -48,7 +48,7 @@ pub struct Subscriber {
 #[derive(Debug, Clone)]
 pub struct Message {
     pub channel: String,
-    pub content: Bytes,
+    pub content: Vec<u8>,
 }
 
 /// Establish a connection with the Redis server located at `addr`.
@@ -107,7 +107,7 @@ impl Client {
     /// }
     /// ```
     #[instrument(skip(self))]
-    pub async fn get(&mut self, key: &str) -> crate::Result<Option<Bytes>> {
+    pub async fn get(&mut self, key: &str) -> crate::Result<Option<Vec<u8>>> {
         // Create a `Get` command for the `key` and convert it to a frame.
         let frame = Get::new(key).into_frame();
 
@@ -156,7 +156,7 @@ impl Client {
     /// }
     /// ```
     #[instrument(skip(self))]
-    pub async fn set(&mut self, key: &str, value: Bytes) -> crate::Result<()> {
+    pub async fn set(&mut self, key: &str, value: Vec<u8>) -> crate::Result<()> {
         // Create a `Set` command and pass it to `set_cmd`. A separate method is
         // used to set a value with an expiration. The common parts of both
         // functions are implemented by `set_cmd`.
@@ -207,7 +207,7 @@ impl Client {
     pub async fn set_expires(
         &mut self,
         key: &str,
-        value: Bytes,
+        value: Vec<u8>,
         expiration: Duration,
     ) -> crate::Result<()> {
         // Create a `Set` command and pass it to `set_cmd`. A separate method is
@@ -257,7 +257,7 @@ impl Client {
     /// }
     /// ```
     #[instrument(skip(self))]
-    pub async fn publish(&mut self, channel: &str, message: Bytes) -> crate::Result<u64> {
+    pub async fn publish(&mut self, channel: &str, message: Vec<u8>) -> crate::Result<u64> {
         // Convert the `Publish` command into a frame
         let frame = Publish::new(channel, message).into_frame();
 
@@ -376,7 +376,7 @@ impl Subscriber {
                     Frame::Array(ref frame) => match frame.as_slice() {
                         [message, channel, content] if *message == "message" => Ok(Some(Message {
                             channel: channel.to_string(),
-                            content: Bytes::from(content.to_string()),
+                            content: Vec::from(content.to_string()),
                         })),
                         _ => Err(mframe.to_error()),
                     },

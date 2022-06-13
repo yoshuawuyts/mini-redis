@@ -1,5 +1,5 @@
 use crate::{Connection, Frame, Parse, ParseError};
-use bytes::Bytes;
+
 use tracing::instrument;
 
 /// Returns PONG if no argument is provided, otherwise
@@ -55,7 +55,7 @@ impl Ping {
     pub(crate) async fn apply(self, dst: &mut Connection) -> crate::Result<()> {
         let response = match self.msg {
             None => Frame::Simple("PONG".to_string()),
-            Some(msg) => Frame::Bulk(Bytes::from(msg)),
+            Some(msg) => Frame::Bulk(Vec::from(msg)),
         };
 
         // Write the response back to the client

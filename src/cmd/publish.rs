@@ -1,7 +1,5 @@
 use crate::{Connection, Db, Frame, Parse};
 
-use bytes::Bytes;
-
 /// Posts a message to the given channel.
 ///
 /// Send a message into a channel without any knowledge of individual consumers.
@@ -15,12 +13,12 @@ pub struct Publish {
     channel: String,
 
     /// The message to publish.
-    message: Bytes,
+    message: Vec<u8>,
 }
 
 impl Publish {
     /// Create a new `Publish` command which sends `message` on `channel`.
-    pub(crate) fn new(channel: impl ToString, message: Bytes) -> Publish {
+    pub(crate) fn new(channel: impl ToString, message: Vec<u8>) -> Publish {
         Publish {
             channel: channel.to_string(),
             message,
@@ -92,8 +90,8 @@ impl Publish {
     /// to the server.
     pub(crate) fn into_frame(self) -> Frame {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("publish".as_bytes()));
-        frame.push_bulk(Bytes::from(self.channel.into_bytes()));
+        frame.push_bulk(Vec::from("publish".as_bytes()));
+        frame.push_bulk(Vec::from(self.channel.into_bytes()));
         frame.push_bulk(self.message);
 
         frame

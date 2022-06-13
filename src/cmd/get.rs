@@ -1,6 +1,5 @@
 use crate::{Connection, Db, Frame, Parse};
 
-use bytes::Bytes;
 use tracing::{debug, instrument};
 
 /// Get the value of key.
@@ -86,8 +85,8 @@ impl Get {
     /// the server.
     pub(crate) fn into_frame(self) -> Frame {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("get".as_bytes()));
-        frame.push_bulk(Bytes::from(self.key.into_bytes()));
+        frame.push_bulk(Vec::from("get".as_bytes()));
+        frame.push_bulk(Vec::from(self.key.into_bytes()));
         frame
     }
 }
